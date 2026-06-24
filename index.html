@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>量子計算 Quantum Computing — 課程筆記</title>
+
+<!-- KaTeX -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+
+<!-- markdown-it + texmath -->
+<script defer src="https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/dist/markdown-it.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/markdown-it-texmath@1.0.0/texmath.min.js"></script>
+
+<style>
+  :root { --accent:#2563eb; --bg:#ffffff; --side:#f6f8fa; --border:#e5e7eb; --text:#1f2328; --muted:#656d76; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,"Segoe UI","PingFang TC","Microsoft JhengHei",Roboto,Helvetica,Arial,sans-serif;
+         color:var(--text); background:var(--bg); line-height:1.7; }
+  #wrap { display:flex; min-height:100vh; }
+  #sidebar { width:280px; flex:0 0 280px; background:var(--side); border-right:1px solid var(--border);
+             padding:24px 18px; position:sticky; top:0; height:100vh; overflow:auto; }
+  #sidebar h1 { font-size:18px; margin:0 0 4px; }
+  #sidebar .sub { font-size:12px; color:var(--muted); margin-bottom:18px; }
+  #sidebar a { display:block; padding:7px 10px; margin:2px 0; border-radius:6px; color:var(--text);
+               text-decoration:none; font-size:14px; }
+  #sidebar a:hover { background:#e8edf3; }
+  #sidebar a.active { background:var(--accent); color:#fff; }
+  #sidebar .repo { margin-top:20px; font-size:12px; }
+  #sidebar .repo a { display:inline; padding:0; color:var(--accent); }
+  main { flex:1; min-width:0; display:flex; justify-content:center; }
+  #content { max-width:820px; width:100%; padding:42px 40px 90px; }
+  #content h1 { font-size:30px; border-bottom:1px solid var(--border); padding-bottom:.3em; margin-top:0; }
+  #content h2 { font-size:23px; border-bottom:1px solid var(--border); padding-bottom:.3em; margin-top:1.6em; }
+  #content h3 { font-size:18px; margin-top:1.4em; }
+  #content a { color:var(--accent); text-decoration:none; }
+  #content a:hover { text-decoration:underline; }
+  #content table { border-collapse:collapse; margin:1em 0; display:block; overflow:auto; }
+  #content th, #content td { border:1px solid var(--border); padding:7px 12px; text-align:left; }
+  #content th { background:var(--side); }
+  #content code { background:#eff1f3; padding:.15em .4em; border-radius:5px; font-size:.9em; }
+  #content pre code { display:block; padding:14px; overflow:auto; }
+  #content blockquote { margin:1em 0; padding:.3em 1em; color:var(--muted); border-left:4px solid var(--border); }
+  #content hr { border:none; border-top:1px solid var(--border); margin:2em 0; }
+  .katex-display { overflow:auto hidden; padding:2px 0; }
+  @media (max-width:820px){
+    #wrap{ flex-direction:column; }
+    #sidebar{ width:100%; height:auto; position:static; border-right:none; border-bottom:1px solid var(--border); }
+    #content{ padding:24px 18px 70px; }
+  }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <nav id="sidebar">
+    <h1>量子計算</h1>
+    <div class="sub">Quantum Computing · 課程筆記</div>
+    <div id="nav"></div>
+    <div class="repo">原始碼：<a href="https://github.com/alexvanhalen/quantum-computing-notes" target="_blank" rel="noopener">GitHub repo</a></div>
+  </nav>
+  <main><article id="content">載入中…</article></main>
+</div>
+
+<script>
+  var PAGES = [
+    { f:"README.md",                   t:"首頁 · 課程簡介" },
+    { f:"01-introduction.md",          t:"1. 導論與總覽" },
+    { f:"02-foundations.md",           t:"2. 量子力學基礎" },
+    { f:"03-circuits.md",              t:"3. 量子閘與量子電路" },
+    { f:"04-density-operator.md",      t:"4. 密度算符與混合態" },
+    { f:"05-quantum-algorithms.md",    t:"5. 量子演算法" },
+    { f:"06-noise-and-operations.md",  t:"6. 量子雜訊與量子操作" },
+    { f:"07-error-correction.md",      t:"7. 古典與量子糾錯碼" },
+    { f:"08-entropy-and-information.md",t:"8. 熵與量子資訊論" }
+  ];
+
+  function buildNav(){
+    var nav = document.getElementById("nav");
+    PAGES.forEach(function(p){
+      var a = document.createElement("a");
+      a.href = "#" + p.f;
+      a.textContent = p.t;
+      a.dataset.file = p.f;
+      nav.appendChild(a);
+    });
+  }
+
+  function setActive(file){
+    document.querySelectorAll("#nav a").forEach(function(a){
+      a.classList.toggle("active", a.dataset.file === file);
+    });
+  }
+
+  var md;
+  function initMd(){
+    md = window.markdownit({ html:true, linkify:true, breaks:false })
+      .use(window.texmath, {
+        engine: window.katex,
+        delimiters: "dollars",
+        katexOptions: { throwOnError:false, macros:{ "\\RR":"\\mathbb{R}" } }
+      });
+  }
+
+  function loadPage(file){
+    if(!file) file = "README.md";
+    fetch(file, { cache:"no-cache" })
+      .then(function(r){ if(!r.ok) throw new Error(r.status); return r.text(); })
+      .then(function(text){
+        document.getElementById("content").innerHTML = md.render(text);
+        setActive(file);
+        window.scrollTo(0,0);
+      })
+      .catch(function(e){
+        document.getElementById("content").innerHTML =
+          "<p>載入失敗：" + file + "（" + e.message + "）</p>";
+      });
+  }
+
+  // 攔截內文中指向 .md 的相對連結，改為在站內載入
+  document.addEventListener("click", function(ev){
+    var a = ev.target.closest("a");
+    if(!a) return;
+    var href = a.getAttribute("href") || "";
+    if(/^#/.test(href)){ return; }                 // 錨點交給 hashchange
+    if(/\.md(\?.*)?$/.test(href) && !/^https?:/.test(href)){
+      ev.preventDefault();
+      var file = href.split("/").pop().split("#")[0];
+      location.hash = "#" + file;
+    }
+  });
+
+  window.addEventListener("hashchange", function(){
+    loadPage(decodeURIComponent(location.hash.replace(/^#/,"")));
+  });
+
+  function start(){
+    initMd();
+    buildNav();
+    loadPage(decodeURIComponent(location.hash.replace(/^#/,"")) || "README.md");
+  }
+
+  // 等 CDN 的 defer 腳本載入完成
+  window.addEventListener("load", function(){
+    if(window.markdownit && window.texmath && window.katex){ start(); }
+    else {
+      var tries = 0, timer = setInterval(function(){
+        tries++;
+        if(window.markdownit && window.texmath && window.katex){ clearInterval(timer); start(); }
+        else if(tries > 50){ clearInterval(timer);
+          document.getElementById("content").innerHTML = "<p>渲染元件載入失敗，請重新整理頁面。</p>"; }
+      }, 100);
+    }
+  });
+</script>
+</body>
+</html>
